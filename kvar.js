@@ -1,49 +1,81 @@
 // Klick på ett belopp i Kvar-kolumnen visar en meny med de fyra första öppna
-// månaderna. Valet lägger beloppet på den månaden via appens eget redigeringsfält.
+// månaderna, även de som ligger utanför vyn. Valet lägger beloppet på månaden
+// via appens API och laddar om listan. Körs i sidans egen JS-värld (MAIN) för
+// att kunna läsa projektdata och appens query-cache.
 (() => {
   if (window.top !== window) return;
   const LIMIT = 4;
   let menu = null;
 
-  const num = (s) => Number((s || "").replace(/[\s\u00a0\u202f]/g, "").replace("\u2212", "-").replace(",", "."));
-  const fmt = (n) => n.toLocaleString("sv-SE").replace("-", "\u2212");
-  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const num = (s) => Number((s || "").replace(/[\s  ]/g, "").replace("−", "-").replace(",", "."));
+  const fmt = (n) => n.toLocaleString("sv-SE");
+  const round = (n) => Math.round(n * 100) / 100;
+  const nextMonth = (m) => (m % 100 === 12 ? (Math.floor(m / 100) + 1) * 100 + 1 : m + 1);
+  const monthName = (m) => new Date(Math.floor(m / 100), (m % 100) - 1).toLocaleDateString("sv-SE", { month: "short", year: "numeric" });
 
   const close = () => { menu?.remove(); menu = null; };
 
-  const columns = (table) => [...table.querySelectorAll("thead th")].map((th) => th.textContent.trim());
+  const fiber = (el) => el[Object.keys(el).find((k) => k.startsWith("__reactFiber"))];
 
-  const openMonths = (row, heads) => {
-    const out = [];
-    [...row.children].forEach((td, i) => {
-      const inp = td.querySelector("input");
-      if (!inp || inp.title || inp.disabled || out.length >= LIMIT) return;
-      out.push({ td, label: heads[i], value: num(inp.value) });
-    });
-    return out;
-  };
-
-  const waitFor = async (fn, ms = 2000) => {
-    for (let t = 0; t < ms; t += 50) { const v = fn(); if (v) return v; await wait(50); }
+  const projectOf = (tr) => {
+    for (let f = fiber(tr); f; f = f.return) {
+      const o = f.memoizedProps?.row?.original;
+      if (o?._id && o.allocationMonthMap) return o;
+    }
     return null;
   };
 
-  const addTo = async (td, amount) => {
-    const ro = td.querySelector("input");
-    const current = num(ro.value);
-    ro.focus();
-    const inp = await waitFor(() => { const i = td.querySelector("input"); return i && !i.readOnly ? i : null; });
-    if (!inp) return alert("Kunde inte öppna månaden för redigering.");
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
-    setter.call(inp, String(Math.round((current + amount) * 100) / 100));
-    inp.dispatchEvent(new Event("input", { bubbles: true }));
-    await wait(50);
-    inp.blur();
-    await wait(300);
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  const queryClient = (el) => {
+    for (let f = fiber(el); f; f = f.return) {
+      const c = f.memoizedProps?.client;
+      if (c && typeof c.invalidateQueries === "function") return c;
+    }
+    return null;
   };
 
-  const show = (cell, amount, months) => {
+  const trpc = async (path, input, post) => {
+    const url = `/trpc/${path}?batch=1` + (post ? "" : `&input=${encodeURIComponent(JSON.stringify({ 0: input ?? {} }))}`);
+    const res = await fetch(url, post
+      ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ 0: input }) }
+      : undefined);
+    const json = await res.json();
+    if (!res.ok || json[0]?.error) throw new Error(json[0]?.error?.message || res.status);
+    return json[0].result.data;
+  };
+
+  const latestClosed = async (client) =>
+    Number(client?.getQueryData([["calendars", "getLatestClosedMonth"], { type: "query" }])
+      ?? (await trpc("calendars.getLatestClosedMonth")));
+
+  const openMonths = (project, closedUntil) => {
+    const out = [];
+    for (let m = nextMonth(closedUntil); out.length < LIMIT; m = nextMonth(m)) {
+      const a = project.allocationMonthMap[m];
+      if (a?.closed) continue;
+      out.push({ month: m, alloc: a, value: a?.revenue ?? 0 });
+    }
+    return out;
+  };
+
+  const addTo = async (project, m, amount, client) => {
+    const revenue = round(m.value + amount);
+    if (m.alloc?._id) {
+      await trpc("projects.updateSubDocument", {
+        projectId: project._id,
+        subDocumentUpdate: { subDocumentType: "allocations", update: { ...m.alloc, revenue } },
+      }, true);
+    } else {
+      await trpc("projects.addSubDocument", {
+        projectId: project._id,
+        subDocumentType: "allocations",
+        template: { month: m.month, revenue, closed: false },
+      }, true);
+    }
+    if (client) await client.invalidateQueries();
+    else location.reload();
+  };
+
+  const show = (cell, amount, months, onPick) => {
     close();
     menu = document.createElement("div");
     Object.assign(menu.style, {
@@ -55,12 +87,6 @@
     head.textContent = `Lägg ${fmt(amount)} på`;
     Object.assign(head.style, { padding: "4px 8px 6px", color: "#64748b" });
     menu.append(head);
-    if (!months.length) {
-      const none = document.createElement("div");
-      none.textContent = "Inga öppna månader i vyn.";
-      none.style.padding = "4px 8px";
-      menu.append(none);
-    }
     for (const m of months) {
       const b = document.createElement("button");
       b.type = "button";
@@ -72,13 +98,17 @@
       b.onmouseenter = () => (b.style.background = "#f1f5f9");
       b.onmouseleave = () => (b.style.background = "none");
       const name = document.createElement("span");
-      name.textContent = m.label;
+      name.textContent = monthName(m.month);
       const val = document.createElement("span");
-      val.textContent = `${fmt(m.value)} → ${fmt(Math.round((m.value + amount) * 100) / 100)}`;
+      val.textContent = `${fmt(m.value)} → ${fmt(round(m.value + amount))}`;
       val.style.color = "#0d9488";
       val.style.fontVariantNumeric = "tabular-nums";
       b.append(name, val);
-      b.onclick = () => { close(); addTo(m.td, amount); };
+      b.onclick = async () => {
+        menu.querySelectorAll("button").forEach((x) => (x.disabled = true));
+        head.textContent = "Sparar…";
+        try { await onPick(m); close(); } catch (err) { head.textContent = `Fel: ${err.message}`; }
+      };
       menu.append(b);
     }
     document.body.append(menu);
@@ -89,22 +119,24 @@
     menu.style.top = `${below ? r.bottom + 4 : r.top - menu.offsetHeight - 4}px`;
   };
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
     if (menu?.contains(e.target)) return;
     close();
     const td = e.target.closest?.("tbody td");
     const table = td?.closest("table");
     if (!table) return;
-    const heads = columns(table);
     const row = td.parentElement;
     const i = [...row.children].indexOf(td);
-    if (heads[i] !== "Kvar") return;
+    if (table.querySelectorAll("thead th")[i]?.textContent.trim() !== "Kvar") return;
     const amount = num(td.textContent);
-    if (!amount) return;
+    const project = projectOf(row);
+    if (!amount || !project) return;
     e.stopPropagation();
-    show(td, amount, openMonths(row, heads));
+    const client = queryClient(row);
+    const months = openMonths(project, await latestClosed(client));
+    show(td, amount, months, (m) => addTo(project, m, amount, client));
   }, true);
 
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
-  addEventListener("scroll", close, true);
+  addEventListener("scroll", (e) => { if (!menu?.contains(e.target)) close(); }, true);
 })();
