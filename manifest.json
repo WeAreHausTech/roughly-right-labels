@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Roughly Right Labels",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Byter otydliga texter i Roughly Right mot egna namn.",
   "permissions": [
     "storage"
@@ -12,11 +12,20 @@
         "https://app.roughlyright.com/*"
       ],
       "js": [
-        "content.js",
-        "kvar.js"
+        "content.js"
       ],
       "run_at": "document_start",
       "all_frames": true
+    },
+    {
+      "matches": [
+        "https://app.roughlyright.com/*"
+      ],
+      "js": [
+        "kvar.js"
+      ],
+      "run_at": "document_idle",
+      "world": "MAIN"
     }
   ],
   "options_page": "options.html",

@@ -50,9 +50,9 @@ reglerna i `rules-default.txt` används bara så länge du inte sparat egna.
 ## Flytta Kvar till en månad
 
 Under Pågående, klicka på ett belopp i kolumnen **Kvar**. En meny visar de fyra
-första öppna månaderna i vyn, med nuvarande värde och värdet efter flytten.
-Välj en månad så läggs beloppet på den, och Kvar töms. Låsta månader hoppas
-över. Visar vyn färre än fyra öppna månader, bläddra fram perioden med pilarna.
+första öppna månaderna, även de som ligger utanför vyn, med nuvarande värde och
+värdet efter flytten. Välj en månad så läggs beloppet på den, och Kvar töms.
+Stängda månader hoppas över.
 
 ## Så fungerar det
 
@@ -61,5 +61,7 @@ En MutationObserver fångar upp nytt innehåll, eftersom Roughly Right renderar 
 delar av sidan hela tiden. Förutom synlig text byts även platshållare,
 hovringstexter, aria-etiketter och fönstrets titel.
 
-`kvar.js` står för Kvar-menyn. Den skriver i månadscellen via appens eget
-redigeringsfält, så sparandet går samma väg som när du skriver för hand.
+`kvar.js` står för Kvar-menyn. Den körs i sidans egen JS-värld för att kunna
+läsa projektets månadsfördelning, och sparar via samma API-anrop som appen
+(`projects.updateSubDocument` eller `projects.addSubDocument`). Därefter laddas
+listan om.
