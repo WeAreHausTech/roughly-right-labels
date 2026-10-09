@@ -47,9 +47,19 @@ reglerna i `rules-default.txt` används bara så länge du inte sparat egna.
 | Previous | Föregående |
 | Next | Nästa |
 
+## Flytta Kvar till en månad
+
+Under Pågående, klicka på ett belopp i kolumnen **Kvar**. En meny visar de fyra
+första öppna månaderna i vyn, med nuvarande värde och värdet efter flytten.
+Välj en månad så läggs beloppet på den, och Kvar töms. Låsta månader hoppas
+över. Visar vyn färre än fyra öppna månader, bläddra fram perioden med pilarna.
+
 ## Så fungerar det
 
 `content.js` läser reglerna, går igenom sidans texter och byter de som matchar.
 En MutationObserver fångar upp nytt innehåll, eftersom Roughly Right renderar om
 delar av sidan hela tiden. Förutom synlig text byts även platshållare,
 hovringstexter, aria-etiketter och fönstrets titel.
+
+`kvar.js` står för Kvar-menyn. Den skriver i månadscellen via appens eget
+redigeringsfält, så sparandet går samma väg som när du skriver för hand.
