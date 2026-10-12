@@ -1,4 +1,4 @@
-# Roughly Right Labels
+# Roughly Righter
 
 Chrome-tillägg som byter otydliga texter i Roughly Right mot begripligare namn.
 Kör bara på `app.roughlyright.com` och fungerar både i webbläsarfliken och i den

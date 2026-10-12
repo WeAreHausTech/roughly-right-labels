@@ -1,8 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Roughly Right Labels",
-  "version": "1.5.1",
-  "description": "Byter otydliga texter i Roughly Right mot egna namn.",
+  "name": "Roughly Righter",
+  "version": "1.4.0",
+  "description": "Inofficiellt tillägg för Roughly Right. Byter otydliga texter mot egna namn och gör Kvar lättare att fördela.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "permissions": [
     "storage"
   ],
@@ -30,7 +35,11 @@
   ],
   "options_page": "options.html",
   "action": {
-    "default_title": "Roughly Right Labels"
+    "default_title": "Roughly Righter",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
   },
   "background": {
     "service_worker": "background.js"
