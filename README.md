@@ -56,9 +56,10 @@ Under Pågående, klicka på ett belopp i kolumnen **Kvar**. Menyn har två läg
 2. **Fördela**: sprid beloppet över 1–12 öppna månader. Välj antal med − och +,
    och form med Jämnt, Framtungt, Baktungt eller Egen (normalfördelning).
    Med Egen styr reglaget Topp vilken månad toppen hamnar i.
-   Skriv ett belopp eller en procentsats (t.ex. `30%`) i en månad för att göra
-   en egen fördelning. Spara fungerar när allt är fördelat; "Resten på sista"
-   lägger det som återstår på sista månaden.
+   Skriv ett belopp eller en procentsats (t.ex. `30%`) i en månad så låses den
+   (🔒), och resten fördelas på de olåsta månaderna enligt vald form. Det blir
+   aldrig något kvar. Minst en månad är alltid olåst: låser du den sista släpps
+   den du låste först. Klicka på 🔒 eller "Lås upp alla" för att släppa låsen.
 
 Stängda månader hoppas över. Belopp avrundas till hela kronor och
 avrundningsresten hamnar på sista månaden.
