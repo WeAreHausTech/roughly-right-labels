@@ -8,9 +8,9 @@ Klistra in fälten i devconsole. Ladda upp `dist/roughly-righter-<version>.zip` 
 
 Inofficiellt tillägg för Roughly Right. Inte kopplat till Roughly Right.
 
-Roughly Righter gör Roughly Right ungefär lite rättare:
+Roughly Righter låter dig anpassa Roughly Right efter hur ditt team pratar:
 
-1. Byter otydliga texter mot begripliga namn, till exempel "Tid är pengar" blir "Ekonomi" och "Vad har jag gjort?" blir "Tidsrapportering". Du skriver egna regler på inställningssidan, en per rad: Gammal text => Ny text.
+1. Ge menyer och rubriker egna namn, till exempel "Tid är pengar" blir "Ekonomi" och "Vad har jag gjort?" blir "Tidsrapportering". Du skriver egna regler på inställningssidan, en per rad: Gammal text => Ny text.
 2. Gör det enklare att flytta Kvar under Pågående. Klicka på ett belopp och flytta det till en öppen månad, eller fördela det över flera månader jämnt, framtungt, baktungt eller med egen fördelning.
 
 Tillägget körs bara på app.roughlyright.com. Det samlar inte in någon data och skickar inget till tredje part. Flyttar av Kvar sparas direkt i Roughly Right, precis som när du ändrar där själv. Dina regler sparas i Chrome och synkas via ditt Google-konto.
@@ -24,7 +24,7 @@ Tillägget körs bara på app.roughlyright.com. Det samlar inte in någon data o
 
 **Single purpose**
 
-Förbättra gränssnittet i Roughly Right (app.roughlyright.com) genom att byta otydliga texter mot begripliga namn och göra det enklare att fördela återstående belopp (Kvar) över månader.
+Anpassa gränssnittet i Roughly Right (app.roughlyright.com) genom att ge texter egna namn och göra det enklare att fördela återstående belopp (Kvar) över månader.
 
 **storage justification**
 

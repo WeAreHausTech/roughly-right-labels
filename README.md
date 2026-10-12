@@ -1,6 +1,6 @@
 # Roughly Righter
 
-Chrome-tillägg som byter otydliga texter i Roughly Right mot begripligare namn.
+Chrome-tillägg som låter dig ge texter i Roughly Right egna namn.
 Kör bara på `app.roughlyright.com` och fungerar både i webbläsarfliken och i den
 installerade Chrome-appen.
 
