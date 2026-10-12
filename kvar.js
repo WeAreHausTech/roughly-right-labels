@@ -1,6 +1,8 @@
 // Klick på ett belopp i Kvar-kolumnen öppnar en meny med två lägen:
 // "En månad" lägger hela beloppet på en av de fyra första öppna månaderna,
 // "Fördela" sprider det över 1–12 öppna månader (jämnt, kurva, eget m.m.).
+// Månader man skriver in ett belopp i låses, och resten fördelas alltid på de
+// olåsta månaderna enligt vald form, så det blir aldrig något kvar.
 // Månader utanför vyn räknas med. Sparar via appens API och laddar om listan.
 // Körs i sidans egen JS-värld (MAIN) för att kunna läsa projektdata och
 // appens query-cache.
@@ -46,12 +48,14 @@
 .rrk-peak{display:grid;grid-template-columns:auto 1fr 84px;gap:8px;align-items:center;margin-bottom:8px;color:#64748b}
 .rrk-peak input{width:100%;accent-color:${TEAL}}
 .rrk-peak b{color:#1e293b;text-align:right;font-weight:600}
-.rrk-row{display:grid;grid-template-columns:64px 1fr 84px 34px;gap:8px;align-items:center;padding:3px 0}
+.rrk-row{display:grid;grid-template-columns:64px 1fr 84px 34px 16px;gap:8px;align-items:center;padding:3px 0}
 .rrk-row small{display:block;color:#94a3b8;font-size:10px}
 .rrk-track{height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden}
 .rrk-track i{display:block;height:100%;background:${TEAL}}
 .rrk-row input{height:24px;border:1px solid #e2e8f0;border-radius:6px;text-align:right;padding:0 6px;font:inherit;font-variant-numeric:tabular-nums;width:100%;box-sizing:border-box}
+.rrk-row input.lock{border-color:${TEAL};background:#f0fdfa}
 .rrk-pct{color:#94a3b8;text-align:right}
+.rrk-lock{border:0;background:none;padding:0;font-size:11px;line-height:1}
 .rrk-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid #e2e8f0;margin-top:6px;padding-top:8px}
 .rrk-foot button{border:1px solid #e2e8f0;background:#fff;border-radius:6px;padding:4px 8px}
 .rrk-foot .rrk-save{background:${TEAL};border-color:${TEAL};color:#fff}
@@ -173,9 +177,20 @@
     let n = Math.min(4, months.length);
     let preset = "Jämnt";
     let parts = [];
+    let locked = []; // index på inskrivna månader, äldst först
     let shift = 0;
     const peak = () => Math.min(n - 1, Math.max(0, (n - 1) / 2 + shift));
-    const calc = () => { parts = split(amount, months.slice(0, n).map((_, i) => PRESETS[preset](i, n, peak()))); };
+    // Låsta månader behåller sitt belopp. Resten delas på de olåsta enligt formen,
+    // med samma vikt per position som utan lås.
+    const calc = () => {
+      locked = locked.filter((i) => i < n);
+      const free = [...Array(n).keys()].filter((i) => !locked.includes(i));
+      const share = split(round(amount - sum(locked.map((i) => parts[i]))), free.map((i) => PRESETS[preset](i, n, peak())));
+      const next = Array(n).fill(0);
+      locked.forEach((i) => (next[i] = parts[i]));
+      free.forEach((i, k) => (next[i] = share[k]));
+      parts = next;
+    };
     const peakName = () => monthName(months[Math.round(peak())].month);
 
     const renderSpread = () => {
@@ -183,8 +198,8 @@
       const step = el("span", "rrk-step");
       const dec = el("button", null, "−");
       const inc = el("button", null, "+");
-      dec.onclick = () => { if (n > 1) { n--; preset === null ? parts.pop() : calc(); renderSpread(); } };
-      inc.onclick = () => { if (n < months.length) { n++; preset === null ? parts.push(0) : calc(); renderSpread(); } };
+      dec.onclick = () => { if (n > 1) { n--; calc(); renderSpread(); } };
+      inc.onclick = () => { if (n < months.length) { n++; calc(); renderSpread(); } };
       step.append(dec, el("b", null, String(n)), inc);
       top.append(el("span", null, `Fördela ${fmt(amount)} på`), step);
 
@@ -229,31 +244,43 @@
           const bar = el("i");
           bar.style.width = `${(Math.abs(p) / max) * 100}%`;
           track.append(bar);
-          const inp = el("input");
+          const isLocked = locked.includes(i);
+          const inp = el("input", isLocked ? "lock" : null);
           inp.value = fmt(p);
           inp.inputMode = "decimal";
-          inp.title = "Belopp eller procent, t.ex. 30%";
+          inp.readOnly = n < 2;
+          inp.title = "Belopp eller procent, t.ex. 30%. Låser månaden.";
+          // Minst en månad hålls olåst; låser man den sista släpps den äldsta.
           inp.onchange = () => {
             const v = num(inp.value);
             parts[i] = isNaN(v) ? 0 : inp.value.trim().endsWith("%") ? Math.round((amount * v) / 100) : v;
-            preset = null;
+            locked = [...locked.filter((x) => x !== i), i];
+            while (locked.length > n - 1) locked.shift();
+            calc();
             renderSpread();
           };
-          row.append(name, track, inp, el("span", "rrk-pct", `${Math.round((p / amount) * 100)}%`));
+          const lock = el("button", "rrk-lock", isLocked ? "🔒" : "");
+          lock.title = "Lås upp";
+          lock.disabled = !isLocked;
+          lock.onclick = () => { locked = locked.filter((x) => x !== i); calc(); renderSpread(); };
+          row.append(name, track, inp, el("span", "rrk-pct", `${Math.round((p / amount) * 100)}%`), lock);
           rows.append(row);
         });
 
         const left = round(amount - sum(parts));
+        // Låsta belopp större än helheten tvingar olåsta månader under noll.
+        const over = parts.some((p, i) => !locked.includes(i) && Math.sign(p) === -Math.sign(amount));
         const foot = el("div", "rrk-foot");
-        const status = el("span", null, left ? `Kvar att fördela: ${fmt(left)}` : "Allt fördelat");
-        status.style.color = left ? "#b45309" : TEAL;
+        const status = el("span", null, over ? "Låsta månader är mer än beloppet" : left ? `Kvar att fördela: ${fmt(left)}` : "Allt fördelat");
+        status.style.color = over || left ? "#b45309" : TEAL;
         const actions = el("span");
         actions.style.display = "flex";
         actions.style.gap = "4px";
-        const rest = el("button", null, "Resten på sista");
-        rest.onclick = () => { parts[n - 1] = round(parts[n - 1] + left); preset = null; renderSpread(); };
+        const unlock = el("button", null, "Lås upp alla");
+        unlock.onclick = () => { locked = []; calc(); renderSpread(); };
         const ok = el("button", "rrk-save", "Spara");
         ok.onclick = () => {
+          if (over) { msg.textContent = "Sänk en låst månad eller lås upp den."; return; }
           if (left) {
             msg.textContent = Math.sign(left) === Math.sign(amount)
               ? `Fördela ${fmt(Math.abs(left))} till innan du sparar.`
@@ -262,7 +289,8 @@
           }
           run(parts.map((add, i) => ({ m: months[i], add })).filter((x) => x.add));
         };
-        actions.append(rest, ok);
+        if (locked.length) actions.append(unlock);
+        actions.append(ok);
         foot.append(status, actions);
         lower.replaceChildren(rows, foot);
       };
