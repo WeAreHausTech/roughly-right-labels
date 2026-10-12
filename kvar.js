@@ -20,6 +20,20 @@
   const monthName = (m) => new Date(Math.floor(m / 100), (m % 100) - 1).toLocaleDateString("sv-SE", { month: "short", year: "numeric" });
   const sum = (a) => a.reduce((x, y) => x + y, 0);
 
+  // Lägger in tusentalsmellanslag medan man skriver och behåller markörens plats.
+  const liveFormat = (inp) => {
+    const v = inp.value;
+    const m = v.replace(/\s/g, "").match(/^([−-]?)(\d*)(,\d*)?(%?)$/);
+    if (!m) return;
+    const out = m[1] + (m[2] ? Number(m[2]).toLocaleString("sv-SE") : "") + (m[3] || "") + m[4];
+    if (out === v) return;
+    const before = v.slice(0, inp.selectionStart).replace(/\s/g, "").length;
+    let i = 0;
+    for (let c = 0; i < out.length && c < before; i++) if (!/\s/.test(out[i])) c++;
+    inp.value = out;
+    inp.setSelectionRange(i, i);
+  };
+
   // Vikter per månad för varje förval. "Egen" är en normalfördelning med topp vid
   // månadsindex "peak" (decimaltal, styrs med reglaget, standard mitt i perioden).
   const PRESETS = {
@@ -249,6 +263,7 @@
           inp.value = fmt(p);
           inp.inputMode = "decimal";
           inp.readOnly = n < 2;
+          inp.oninput = () => liveFormat(inp);
           inp.title = "Belopp eller procent, t.ex. 30%. Låser månaden.";
           // Minst en månad hålls olåst; låser man den sista släpps den äldsta.
           inp.onchange = () => {
