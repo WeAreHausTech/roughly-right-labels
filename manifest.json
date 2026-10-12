@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Roughly Righter",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Inofficiellt tillägg för Roughly Right. Ge menyer och rubriker egna namn och fördela Kvar över flera månader.",
   "icons": {
     "16": "icons/icon16.png",
