@@ -54,8 +54,8 @@ Under Pågående, klicka på ett belopp i kolumnen **Kvar**. Menyn har två läg
 1. **En månad** (standard): de fyra första öppna månaderna, även de utanför vyn,
    med nuvarande värde och värdet efter flytten. Klicka på en månad så sparas det.
 2. **Fördela**: sprid beloppet över 1–12 öppna månader. Välj antal med − och +,
-   och form med Jämnt, Framtungt, Baktungt eller Klocka (normalfördelning).
-   Med Klocka styr reglaget Topp vilken månad toppen hamnar i.
+   och form med Jämnt, Framtungt, Baktungt eller Egen (normalfördelning).
+   Med Egen styr reglaget Topp vilken månad toppen hamnar i.
    Skriv ett belopp eller en procentsats (t.ex. `30%`) i en månad för att göra
    en egen fördelning. Spara fungerar när allt är fördelat; "Resten på sista"
    lägger det som återstår på sista månaden.
