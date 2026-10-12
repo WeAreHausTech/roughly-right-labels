@@ -47,12 +47,20 @@ reglerna i `rules-default.txt` används bara så länge du inte sparat egna.
 | Previous | Föregående |
 | Next | Nästa |
 
-## Flytta Kvar till en månad
+## Flytta Kvar till månader
 
-Under Pågående, klicka på ett belopp i kolumnen **Kvar**. En meny visar de fyra
-första öppna månaderna, även de som ligger utanför vyn, med nuvarande värde och
-värdet efter flytten. Välj en månad så läggs beloppet på den, och Kvar töms.
-Stängda månader hoppas över.
+Under Pågående, klicka på ett belopp i kolumnen **Kvar**. Menyn har två lägen:
+
+1. **En månad** (standard): de fyra första öppna månaderna, även de utanför vyn,
+   med nuvarande värde och värdet efter flytten. Klicka på en månad så sparas det.
+2. **Fördela**: sprid beloppet över 1–12 öppna månader. Välj antal med − och +,
+   och form med Jämnt, Framtungt, Kurva (normalfördelning) eller Baktungt.
+   Skriv ett belopp eller en procentsats (t.ex. `30%`) i en månad för att göra
+   en egen fördelning. Spara fungerar när allt är fördelat; "Resten på sista"
+   lägger det som återstår på sista månaden.
+
+Stängda månader hoppas över. Belopp avrundas till hela kronor och
+avrundningsresten hamnar på sista månaden.
 
 ## Så fungerar det
 
