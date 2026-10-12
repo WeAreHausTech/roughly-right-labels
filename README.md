@@ -1,3 +1,5 @@
+![Roughly Righter i Chrome](store/screenshot-1280x800.png)
+
 # Roughly Righter
 
 Chrome-tillägg som låter dig ge texter i Roughly Right egna namn.
