@@ -18,13 +18,13 @@
   const monthName = (m) => new Date(Math.floor(m / 100), (m % 100) - 1).toLocaleDateString("sv-SE", { month: "short", year: "numeric" });
   const sum = (a) => a.reduce((x, y) => x + y, 0);
 
-  // Vikter per månad för varje förval. "Kurva" är en normalfördelning med topp vid
-  // månadsindex "peak" (halva steg tillåtna, standard mitt i perioden).
+  // Vikter per månad för varje förval. "Klocka" är en normalfördelning med topp vid
+  // månadsindex "peak" (decimaltal, styrs med reglaget, standard mitt i perioden).
   const PRESETS = {
     "Jämnt": () => 1,
     "Framtungt": (i, n) => n - i,
-    "Kurva": (i, n, peak) => Math.exp(-((i - peak) ** 2) / (2 * Math.max(n / 4, 0.5) ** 2)),
     "Baktungt": (i) => i + 1,
+    "Klocka": (i, n, peak) => Math.exp(-((i - peak) ** 2) / (2 * Math.max(n / 4, 0.5) ** 2)),
   };
 
   const css = `
@@ -43,6 +43,9 @@
 .rrk-chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
 .rrk-chips button{border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:3px 10px}
 .rrk-chips button.on{background:#ccfbf1;border-color:${TEAL};color:#115e59}
+.rrk-peak{display:grid;grid-template-columns:auto 1fr 84px;gap:8px;align-items:center;margin-bottom:8px;color:#64748b}
+.rrk-peak input{width:100%;accent-color:${TEAL}}
+.rrk-peak b{color:#1e293b;text-align:right;font-weight:600}
 .rrk-row{display:grid;grid-template-columns:64px 1fr 84px 34px;gap:8px;align-items:center;padding:3px 0}
 .rrk-row small{display:block;color:#94a3b8;font-size:10px}
 .rrk-track{height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden}
@@ -173,13 +176,7 @@
     let shift = 0;
     const peak = () => Math.min(n - 1, Math.max(0, (n - 1) / 2 + shift));
     const calc = () => { parts = split(amount, months.slice(0, n).map((_, i) => PRESETS[preset](i, n, peak()))); };
-    const peakName = () => {
-      const p = peak();
-      const a = monthName(months[Math.floor(p)].month);
-      if (Number.isInteger(p)) return a;
-      const b = monthName(months[Math.ceil(p)].month);
-      return a.split(" ")[1] === b.split(" ")[1] ? `${a.split(" ")[0]}–${b}` : `${a}–${b}`;
-    };
+    const peakName = () => monthName(months[Math.round(peak())].month);
 
     const renderSpread = () => {
       const top = el("div", "rrk-bar-top");
@@ -192,80 +189,87 @@
       top.append(el("span", null, `Fördela ${fmt(amount)} på`), step);
 
       const chips = el("div", "rrk-chips");
-      for (const k of [...Object.keys(PRESETS), "Egen"]) {
+      for (const k of Object.keys(PRESETS)) {
         const c = el("button", k === preset ? "on" : null, k);
-        c.onclick = () => { if (k === "Egen") return; preset = k; calc(); renderSpread(); };
+        c.onclick = () => { preset = k; calc(); renderSpread(); };
         chips.append(c);
       }
 
+      const lower = el("div");
       const curve = el("div");
-      if (preset === "Kurva") {
-        curve.className = "rrk-bar-top";
-        const move = (d) => () => {
-          const next = Math.min(n - 1, Math.max(0, peak() + d));
-          shift = next - (n - 1) / 2;
+      if (preset === "Klocka") {
+        curve.className = "rrk-peak";
+        const slider = el("input");
+        slider.type = "range";
+        slider.min = 0;
+        slider.max = n - 1;
+        slider.step = 0.1;
+        slider.value = peak();
+        slider.disabled = n < 2;
+        const label = el("b", null, peakName());
+        slider.oninput = () => {
+          shift = Number(slider.value) - (n - 1) / 2;
           calc();
-          renderSpread();
+          label.textContent = peakName();
+          fill();
         };
-        const nav = el("span", "rrk-step");
-        const back = el("button", null, "◀");
-        const fwd = el("button", null, "▶");
-        back.title = "Flytta toppen bakåt";
-        fwd.title = "Flytta toppen framåt";
-        back.onclick = move(-0.5);
-        fwd.onclick = move(0.5);
-        nav.append(back, el("b", null, peakName()), fwd);
-        curve.append(el("span", null, "Topp"), nav);
+        curve.append(el("span", null, "Topp"), slider, label);
       }
 
-      const rows = el("div");
-      const max = Math.max(...parts.map(Math.abs), 1);
-      parts.forEach((p, i) => {
-        const m = months[i];
-        const row = el("div", "rrk-row");
-        const name = el("span", null, monthName(m.month));
-        name.append(el("small", null, `nu ${fmt(m.value)}`));
-        const track = el("div", "rrk-track");
-        const bar = el("i");
-        bar.style.width = `${(Math.abs(p) / max) * 100}%`;
-        track.append(bar);
-        const inp = el("input");
-        inp.value = fmt(p);
-        inp.inputMode = "decimal";
-        inp.title = "Belopp eller procent, t.ex. 30%";
-        inp.onchange = () => {
-          const v = num(inp.value);
-          parts[i] = isNaN(v) ? 0 : inp.value.trim().endsWith("%") ? Math.round((amount * v) / 100) : v;
-          preset = "Egen";
-          renderSpread();
-        };
-        row.append(name, track, inp, el("span", "rrk-pct", `${Math.round((p / amount) * 100)}%`));
-        rows.append(row);
-      });
+      // Raderna och summeringen ritas om separat så att reglaget inte tappar greppet.
+      const fill = () => {
+        const rows = el("div");
+        const max = Math.max(...parts.map(Math.abs), 1);
+        parts.forEach((p, i) => {
+          const m = months[i];
+          const row = el("div", "rrk-row");
+          const name = el("span", null, monthName(m.month));
+          name.append(el("small", null, `nu ${fmt(m.value)}`));
+          const track = el("div", "rrk-track");
+          const bar = el("i");
+          bar.style.width = `${(Math.abs(p) / max) * 100}%`;
+          track.append(bar);
+          const inp = el("input");
+          inp.value = fmt(p);
+          inp.inputMode = "decimal";
+          inp.title = "Belopp eller procent, t.ex. 30%";
+          inp.onchange = () => {
+            const v = num(inp.value);
+            parts[i] = isNaN(v) ? 0 : inp.value.trim().endsWith("%") ? Math.round((amount * v) / 100) : v;
+            preset = "Egen";
+            renderSpread();
+          };
+          row.append(name, track, inp, el("span", "rrk-pct", `${Math.round((p / amount) * 100)}%`));
+          rows.append(row);
+        });
 
-      const left = round(amount - sum(parts));
-      const foot = el("div", "rrk-foot");
-      const status = el("span", null, left ? `Kvar att fördela: ${fmt(left)}` : "Allt fördelat");
-      status.style.color = left ? "#b45309" : TEAL;
-      const actions = el("span");
-      actions.style.display = "flex";
-      actions.style.gap = "4px";
-      const rest = el("button", null, "Resten på sista");
-      rest.onclick = () => { parts[n - 1] = round(parts[n - 1] + left); preset = "Egen"; renderSpread(); };
-      const ok = el("button", "rrk-save", "Spara");
-      ok.onclick = () => {
-        if (left) {
-          msg.textContent = Math.sign(left) === Math.sign(amount)
-            ? `Fördela ${fmt(Math.abs(left))} till innan du sparar.`
-            : `Du har fördelat ${fmt(Math.abs(left))} för mycket.`;
-          return;
-        }
-        run(parts.map((add, i) => ({ m: months[i], add })).filter((x) => x.add));
+        const left = round(amount - sum(parts));
+        const foot = el("div", "rrk-foot");
+        const status = el("span", null, left ? `Kvar att fördela: ${fmt(left)}` : "Allt fördelat");
+        status.style.color = left ? "#b45309" : TEAL;
+        const actions = el("span");
+        actions.style.display = "flex";
+        actions.style.gap = "4px";
+        const rest = el("button", null, "Resten på sista");
+        rest.onclick = () => { parts[n - 1] = round(parts[n - 1] + left); preset = "Egen"; renderSpread(); };
+        const ok = el("button", "rrk-save", "Spara");
+        ok.onclick = () => {
+          if (left) {
+            msg.textContent = Math.sign(left) === Math.sign(amount)
+              ? `Fördela ${fmt(Math.abs(left))} till innan du sparar.`
+              : `Du har fördelat ${fmt(Math.abs(left))} för mycket.`;
+            return;
+          }
+          run(parts.map((add, i) => ({ m: months[i], add })).filter((x) => x.add));
+        };
+        actions.append(rest, ok);
+        foot.append(status, actions);
+        lower.replaceChildren(rows, foot);
       };
-      actions.append(rest, ok);
-      foot.append(status, actions);
+
+      fill();
       msg.textContent = "";
-      body.replaceChildren(top, chips, curve, rows, foot);
+      body.replaceChildren(top, chips, curve, lower);
       place();
     };
 
