@@ -55,6 +55,7 @@ Under Pågående, klicka på ett belopp i kolumnen **Kvar**. Menyn har två läg
    med nuvarande värde och värdet efter flytten. Klicka på en månad så sparas det.
 2. **Fördela**: sprid beloppet över 1–12 öppna månader. Välj antal med − och +,
    och form med Jämnt, Framtungt, Kurva (normalfördelning) eller Baktungt.
+   Med Kurva flyttar ◀ och ▶ toppen bakåt eller framåt en halv månad i taget.
    Skriv ett belopp eller en procentsats (t.ex. `30%`) i en månad för att göra
    en egen fördelning. Spara fungerar när allt är fördelat; "Resten på sista"
    lägger det som återstår på sista månaden.
