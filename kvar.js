@@ -18,13 +18,13 @@
   const monthName = (m) => new Date(Math.floor(m / 100), (m % 100) - 1).toLocaleDateString("sv-SE", { month: "short", year: "numeric" });
   const sum = (a) => a.reduce((x, y) => x + y, 0);
 
-  // Vikter per månad för varje förval. "Klocka" är en normalfördelning med topp vid
+  // Vikter per månad för varje förval. "Egen" är en normalfördelning med topp vid
   // månadsindex "peak" (decimaltal, styrs med reglaget, standard mitt i perioden).
   const PRESETS = {
     "Jämnt": () => 1,
     "Framtungt": (i, n) => n - i,
     "Baktungt": (i) => i + 1,
-    "Klocka": (i, n, peak) => Math.exp(-((i - peak) ** 2) / (2 * Math.max(n / 4, 0.5) ** 2)),
+    "Egen": (i, n, peak) => Math.exp(-((i - peak) ** 2) / (2 * Math.max(n / 4, 0.5) ** 2)),
   };
 
   const css = `
@@ -183,8 +183,8 @@
       const step = el("span", "rrk-step");
       const dec = el("button", null, "−");
       const inc = el("button", null, "+");
-      dec.onclick = () => { if (n > 1) { n--; preset === "Egen" ? parts.pop() : calc(); renderSpread(); } };
-      inc.onclick = () => { if (n < months.length) { n++; preset === "Egen" ? parts.push(0) : calc(); renderSpread(); } };
+      dec.onclick = () => { if (n > 1) { n--; preset === null ? parts.pop() : calc(); renderSpread(); } };
+      inc.onclick = () => { if (n < months.length) { n++; preset === null ? parts.push(0) : calc(); renderSpread(); } };
       step.append(dec, el("b", null, String(n)), inc);
       top.append(el("span", null, `Fördela ${fmt(amount)} på`), step);
 
@@ -197,7 +197,7 @@
 
       const lower = el("div");
       const curve = el("div");
-      if (preset === "Klocka") {
+      if (preset === "Egen") {
         curve.className = "rrk-peak";
         const slider = el("input");
         slider.type = "range";
@@ -236,7 +236,7 @@
           inp.onchange = () => {
             const v = num(inp.value);
             parts[i] = isNaN(v) ? 0 : inp.value.trim().endsWith("%") ? Math.round((amount * v) / 100) : v;
-            preset = "Egen";
+            preset = null;
             renderSpread();
           };
           row.append(name, track, inp, el("span", "rrk-pct", `${Math.round((p / amount) * 100)}%`));
@@ -251,7 +251,7 @@
         actions.style.display = "flex";
         actions.style.gap = "4px";
         const rest = el("button", null, "Resten på sista");
-        rest.onclick = () => { parts[n - 1] = round(parts[n - 1] + left); preset = "Egen"; renderSpread(); };
+        rest.onclick = () => { parts[n - 1] = round(parts[n - 1] + left); preset = null; renderSpread(); };
         const ok = el("button", "rrk-save", "Spara");
         ok.onclick = () => {
           if (left) {
