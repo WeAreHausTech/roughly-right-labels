@@ -18,11 +18,12 @@
   const monthName = (m) => new Date(Math.floor(m / 100), (m % 100) - 1).toLocaleDateString("sv-SE", { month: "short", year: "numeric" });
   const sum = (a) => a.reduce((x, y) => x + y, 0);
 
-  // Vikter per månad för varje förval. "Kurva" är en normalfördelning centrerad i perioden.
+  // Vikter per månad för varje förval. "Kurva" är en normalfördelning med topp vid
+  // månadsindex "peak" (halva steg tillåtna, standard mitt i perioden).
   const PRESETS = {
     "Jämnt": () => 1,
     "Framtungt": (i, n) => n - i,
-    "Kurva": (i, n) => Math.exp(-((i - (n - 1) / 2) ** 2) / (2 * Math.max(n / 4, 0.5) ** 2)),
+    "Kurva": (i, n, peak) => Math.exp(-((i - peak) ** 2) / (2 * Math.max(n / 4, 0.5) ** 2)),
     "Baktungt": (i) => i + 1,
   };
 
@@ -169,7 +170,16 @@
     let n = Math.min(4, months.length);
     let preset = "Jämnt";
     let parts = [];
-    const calc = () => { parts = split(amount, months.slice(0, n).map((_, i) => PRESETS[preset](i, n))); };
+    let shift = 0;
+    const peak = () => Math.min(n - 1, Math.max(0, (n - 1) / 2 + shift));
+    const calc = () => { parts = split(amount, months.slice(0, n).map((_, i) => PRESETS[preset](i, n, peak()))); };
+    const peakName = () => {
+      const p = peak();
+      const a = monthName(months[Math.floor(p)].month);
+      if (Number.isInteger(p)) return a;
+      const b = monthName(months[Math.ceil(p)].month);
+      return a.split(" ")[1] === b.split(" ")[1] ? `${a.split(" ")[0]}–${b}` : `${a}–${b}`;
+    };
 
     const renderSpread = () => {
       const top = el("div", "rrk-bar-top");
@@ -186,6 +196,26 @@
         const c = el("button", k === preset ? "on" : null, k);
         c.onclick = () => { if (k === "Egen") return; preset = k; calc(); renderSpread(); };
         chips.append(c);
+      }
+
+      const curve = el("div");
+      if (preset === "Kurva") {
+        curve.className = "rrk-bar-top";
+        const move = (d) => () => {
+          const next = Math.min(n - 1, Math.max(0, peak() + d));
+          shift = next - (n - 1) / 2;
+          calc();
+          renderSpread();
+        };
+        const nav = el("span", "rrk-step");
+        const back = el("button", null, "◀");
+        const fwd = el("button", null, "▶");
+        back.title = "Flytta toppen bakåt";
+        fwd.title = "Flytta toppen framåt";
+        back.onclick = move(-0.5);
+        fwd.onclick = move(0.5);
+        nav.append(back, el("b", null, peakName()), fwd);
+        curve.append(el("span", null, "Topp"), nav);
       }
 
       const rows = el("div");
@@ -235,7 +265,7 @@
       actions.append(rest, ok);
       foot.append(status, actions);
       msg.textContent = "";
-      body.replaceChildren(top, chips, rows, foot);
+      body.replaceChildren(top, chips, curve, rows, foot);
       place();
     };
 
