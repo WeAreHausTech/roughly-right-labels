@@ -6,10 +6,10 @@ installerade Chrome-appen.
 
 ## Installera
 
-1. Ladda ner mappen: `git clone git@github.com:WeAreHausTech/roughly-right-labels.git`
+1. Ladda ner mappen: `git clone git@github.com:WeAreHausTech/roughly-righter.git`
 2. Öppna `chrome://extensions` i Chrome.
 3. Slå på **Developer mode** uppe till höger.
-4. Klicka **Load unpacked** och välj mappen `roughly-right-labels`.
+4. Klicka **Load unpacked** och välj mappen `roughly-righter`.
 5. Ladda om Roughly Right med Cmd+R.
 
 Mappen måste ligga kvar. Chrome läser den varje gång webbläsaren startar.
