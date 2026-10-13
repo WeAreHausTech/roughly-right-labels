@@ -8,10 +8,11 @@ installerade Chrome-appen.
 
 ## Installera
 
-1. Ladda ner mappen: `git clone git@github.com:WeAreHausTech/roughly-righter.git`
+1. Ladda ner mappen: `git clone https://github.com/WeAreHausTech/roughly-righter.git`,
+   eller ladda ner den som zip från https://github.com/WeAreHausTech/roughly-righter och packa upp.
 2. Öppna `chrome://extensions` i Chrome.
 3. Slå på **Developer mode** uppe till höger.
-4. Klicka **Load unpacked** och välj mappen `roughly-righter`.
+4. Klicka **Load unpacked** och välj mappen `roughly-righter` (`roughly-righter-main` om du laddade ner zip).
 5. Ladda om Roughly Right med Cmd+R.
 
 Mappen måste ligga kvar. Chrome läser den varje gång webbläsaren startar.
