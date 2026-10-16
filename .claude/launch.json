@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "roughly-righter",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "browser"],
+      "port": 9333,
+      "autoPort": true
+    }
+  ]
+}

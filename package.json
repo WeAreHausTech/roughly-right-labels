@@ -1,0 +1,13 @@
+{
+  "name": "roughly-righter",
+  "private": true,
+  "type": "module",
+  "description": "Utvecklingsverktyg för tillägget. Chrome läser bara filerna i manifest.json, och build.sh packar bara dem.",
+  "scripts": {
+    "browser": "node scripts/browser.mjs",
+    "check": "node scripts/browser.mjs --check"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

@@ -67,6 +67,22 @@ Under Pågående, klicka på ett belopp i kolumnen **Kvar**. Menyn har två läg
 Stängda månader hoppas över. Belopp avrundas till hela kronor och
 avrundningsresten hamnar på sista månaden.
 
+## Utveckling
+
+Kör `npm install` en gång. Det installerar Playwright, som bara behövs för att testa
+tillägget. Chrome läser inte `node_modules/`, och `build.sh` packar bara tilläggets egna filer.
+
+1. `npm run browser` öppnar Roughly Right i ett eget Chromium-fönster med tillägget laddat
+   från den här mappen. Logga in en gång. Inloggningen sparas i `.playwright-profile/`, som
+   inte checkas in.
+2. `npm run check` startar Chromium utan fönster. Playwright svarar med en testsida i stället
+   för den riktiga sidan på `app.roughlyright.com`, och skriptet kontrollerar att tillägget
+   byter texterna och att inställningssidan visar standardreglerna. Kommandot slutar med en
+   felkod om någon kontroll misslyckas.
+
+Claude Code startar `npm run browser` från `.claude/launch.json`. Förhandsvisningen i Claude
+visar då en statussida på port 9333, och tillägget körs i Chromium-fönstret.
+
 ## Så fungerar det
 
 `content.js` läser reglerna, går igenom sidans texter och byter de som matchar.
