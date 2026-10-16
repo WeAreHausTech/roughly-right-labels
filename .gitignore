@@ -1,2 +1,5 @@
 .DS_Store
 dist/
+node_modules/
+.playwright-profile/
+.claude/worktrees/
